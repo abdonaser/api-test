@@ -1,36 +1,46 @@
 const { validationResult } = require("express-validator");
 let courses = require("../data/courses");
 const errorMessage = require("../utils/formatError");
+const courseModel = require("../models/course.model");
 
-const getAllCourser = (req, res) => {
-    res.json(courses)
+const getAllCourser = async (req, res) => {
+    const courses_db = await courseModel.find()
+    res.json(courses_db)
 };
 
-const getCourse = (req, res) => {
-    const courseId = +req.params.courseId
-    const course = courses.find(course => course.id === courseId)
-    if (!course) {
-        res.status(404).json({ msg: "faild" })
-
-    } else {
-        res.status(200).json({ msg: "seccess", data: course })
+const getCourse = async (req, res) => {
+    const courseId = req.params.courseId
+    // const course = courses.find(course => course.id === courseId)
+    try {
+        const course = await courseModel.findById(courseId)
+        if (!course) {
+            res.status(404).json({ msg: "course not Found" })
+        } else {
+            res.status(200).json({ msg: "seccess", data: course })
+        }
+    } catch (error) {
+        res.status(500).json({ msg: "invalid ID" })
     }
 };
 
-const addCourse = (req, res) => {
+const addCourse = async (req, res) => {
     const result = validationResult(req)
     if (result.isEmpty()) {
         const courseData = req.body;
 
         if (courseData) {
             let newCourse = {
-                id: Date.now(),
                 ...courseData
             }
-            courses.push(newCourse);
+
+            // const addcourse = new courseModel(newCourse)
+            // await addcourse.save();
+            await courseModel.create(newCourse)
+
             res
                 .status(201)
                 .json({ msg: "added Successfully", data: newCourse })
+
         } else {
             res
                 .status(404)
@@ -44,58 +54,85 @@ const addCourse = (req, res) => {
 
 };
 
-const UpdateCourse = (req, res) => {
-    const courseId = +req.params.courseId
+const UpdateCourse = async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const updateData = req.body;
 
-    const courseExist = courses.find(course => course.id === courseId)
-    if (courseExist) {
-        const courseUpdtaed = req.body
-        courses = courses.map(course => course.id === courseId ? { id: course.id, ...courseUpdtaed } : course)
-        console.log(courses);
-        res
-            .status(200)
-            .json({ msg: "updated successfully", data: courseExist })
-    } else {
-        res
-            .status(404)
-            .json({ msg: "faild updating" })
+        // Check if course exists
+        const courseExist = await courseModel.findById(courseId);
+
+        if (!courseExist) {
+            return res.status(404).json({ msg: "Course not found" });
+        }
+
+        // Update course
+        const updatedCourse = await courseModel.findOneAndReplace(
+            { _id: courseId },
+            updateData,
+            { new: true, runValidators: true }
+        );
+
+        return res.status(200).json({
+            msg: "Course updated successfully",
+            data: updatedCourse,
+        });
+
+    } catch (error) {
+        console.error("UpdateCourse error:", error);
+        return res.status(500).json({ msg: "invalid ID", err: error.message });
     }
-
 };
 
-const Update_SpeceficProperty_Course = (req, res) => {
-    const courseId = +req.params.courseId
-    const courseExist = courses.find(course => course.id === courseId)
 
-    if (courseExist) {
+const Update_SpeceficProperty_Course = async (req, res) => {
+    try {
+        const { courseId } = req.params
         const newFieldsUpdated = req.body
-        courses = courses.map(course => course.id === courseId ? { ...courseExist, ...newFieldsUpdated } : course)
-        const courseAfterUpdating = courses.find(course => course.id === courseId)
+
+        const courseExist = await courseModel.findById(courseId)
+        if (!courseExist) {
+            return res
+                .status(404)
+                .json({ msg: "Course Not Found" })
+        }
+
+        const courseAfterUpdating = await courseModel.findByIdAndUpdate(courseId, { $set: newFieldsUpdated }, { new: true, runValidators: true }
+        )
+
 
         return res
             .status(200)
             .json({ msg: "updated successfully", data: courseAfterUpdating })
-    } else {
-        return res
-            .status(404)
-            .json({ msg: "faild updating" })
+
+    } catch (error) {
+        return res.status(500).json({ msg: "invalid ID", err: error.message });
     }
 
 };
 
 
-const deleteCourse = (req, res) => {
-    const courseId = +req.params.courseId
-    const courseExist = courses.find(course => course.id === courseId)
-    if (courseExist) {
-        courses = courses.filter(course => course.id !== courseId)
-        res
-            .status(200)
-            .json({ msg: "Deleted successfully" })
-    } else {
-        res
-            .status(404)
-            .json({ msg: "faild Deleting" })
+const deleteCourse = async (req, res) => {
+    try {
+        const { courseId } = req.params;
+
+        const course = await courseModel.findById(courseId);
+
+        if (!course) {
+            return res.status(404).json({ msg: "Course not found" });
+        }
+
+        const deletedCourse = await courseModel.findByIdAndDelete(courseId);
+        console.log(deletedCourse);
+
+        if (deletedCourse) {
+            return res.status(200).json({ msg: "Course deleted successfully" });
+        } else {
+            return res.status(400).json({ msg: "Failed to delete course" });
+        }
+
+    } catch (error) {
+        return res.status(500).json({ msg: "An error occurred", error: error.message });
     }
 };
 
