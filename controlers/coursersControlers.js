@@ -1,9 +1,13 @@
 const { validationResult } = require("express-validator");
-let courses = require("../data/courses");
+// let courses = require("../public/data/courses");
+const { allCourses, writeData } = require('../helpers/read_write_Helpers');
 const errorMessage = require("../utils/formatError");
 
+// Read all Courses
+const courses = allCourses()
+
 const getAllCourser = (req, res) => {
-    res.json(courses)
+    res.status(200).json({ msg: "seccess", data: courses })
 };
 
 const getCourse = (req, res) => {
@@ -27,7 +31,9 @@ const addCourse = (req, res) => {
                 id: Date.now(),
                 ...courseData
             }
-            courses.push(newCourse);
+            // courses.push(newCourse);
+            let newdata = [...courses, newCourse]
+            writeData(newdata)
             res
                 .status(201)
                 .json({ msg: "added Successfully", data: newCourse })
@@ -50,8 +56,8 @@ const UpdateCourse = (req, res) => {
     const courseExist = courses.find(course => course.id === courseId)
     if (courseExist) {
         const courseUpdtaed = req.body
-        courses = courses.map(course => course.id === courseId ? { id: course.id, ...courseUpdtaed } : course)
-        console.log(courses);
+        let newdata = courses.map(course => course.id === courseId ? { id: course.id, ...courseUpdtaed } : course)
+        writeData(newdata)
         res
             .status(200)
             .json({ msg: "updated successfully", data: courseExist })
@@ -69,7 +75,8 @@ const Update_SpeceficProperty_Course = (req, res) => {
 
     if (courseExist) {
         const newFieldsUpdated = req.body
-        courses = courses.map(course => course.id === courseId ? { ...courseExist, ...newFieldsUpdated } : course)
+        let newdata = courses.map(course => course.id === courseId ? { ...courseExist, ...newFieldsUpdated } : course)
+        writeData(newdata)
         const courseAfterUpdating = courses.find(course => course.id === courseId)
 
         return res
@@ -78,7 +85,7 @@ const Update_SpeceficProperty_Course = (req, res) => {
     } else {
         return res
             .status(404)
-            .json({ msg: "faild updating" })
+            .json({ msg: "this course not Found" })
     }
 
 };
@@ -88,7 +95,8 @@ const deleteCourse = (req, res) => {
     const courseId = +req.params.courseId
     const courseExist = courses.find(course => course.id === courseId)
     if (courseExist) {
-        courses = courses.filter(course => course.id !== courseId)
+        let newdata = courses.filter(course => course.id !== courseId)
+        writeData(newdata)
         res
             .status(200)
             .json({ msg: "Deleted successfully" })
