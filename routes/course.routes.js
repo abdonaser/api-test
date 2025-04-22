@@ -21,5 +21,8 @@ router.route('/:courseId')
     .delete(deleteCourse)
 
 
+//.get("rout" ,midd(req , res , next) , controllers(req , res , next) )
+
+
 
 module.exports = router
