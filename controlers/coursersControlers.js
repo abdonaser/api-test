@@ -21,7 +21,6 @@ const getAllCourser = asyncWrapper(
             .json({
                 status: SUCCESS,
                 data: {
-                    "length": courses_db.length,
                     "courses": courses_db
                 }
             })
