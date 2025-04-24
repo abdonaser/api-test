@@ -1,5 +1,5 @@
 const { validationResult } = require("express-validator");
-const errorMessage = require("../utils/formatError");
+const errorMessage = require("../helpers/formatError");
 const courseModel = require("../models/course.model");
 const { SUCCESS, ERROR, FAIL } = require("../utils/json_status_text");
 const asyncWrapper = require("../midelWares/asyncWrapper");

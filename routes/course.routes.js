@@ -5,14 +5,14 @@ const {
     addCourse,
     deleteCourse,
     getCourse } = require('../controlers/coursersControlers')
-const fieldValidation = require('../midelWares/courseSchema')
+const coursefieldsValidation = require('../midelWares/Validations/courseSchema_validation')
 const express = require('express')
 const router = express.Router()
 
 
 router.route('/')
     .get(getAllCourser)
-    .post(fieldValidation(), addCourse)
+    .post(coursefieldsValidation(), addCourse)
 
 router.route('/:courseId')
     .get(getCourse)

@@ -2,41 +2,57 @@ const express = require('express')
 require('dotenv').config()
 const mongoose = require('mongoose');
 var cors = require('cors')
-
+const cookieParser = require('cookie-parser');
 const app = express()
 const PORT = process.env.PORT || 3000
 const connectDB = require('./config/dbConnection');
 const { ERROR } = require('./utils/json_status_text');
+const path = require('path');
 
-
-
-//MiddleWares---------
+//#region //MiddleWares------------------------------------------------------
+app.use(express.urlencoded({ extended: true }));
 app.use(express.json())
-app.use(cors())
+
+// Enable CORS with specified options to allow cross-origin requests
+const corsOptions = require('./config/corsOptions');
+app.use(cors(corsOptions));
+
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname + '/Public')));
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'ejs');
+//#endregion ------------------------------------------------------
+
+
+//#region //' Handel All Routes
+
 // courses Routes
 const coursesRoutes = require('./routes/course.routes');
-
 app.use('/api/courses', coursesRoutes)
+
+const usersRoutes = require('./routes/user.routes')
+app.use('/api/users', usersRoutes)
+
+
+const AuthRoutes = require('./routes/auth.routes')
+app.use('/api/auth', AuthRoutes)
+
+//#endregion
 
 // Handling 404 errors
 app.all('*', (req, res) => {
-    res.status(500)
-        .json({
-            status: ERROR,
-            message: "This Resourse Is Not Available"
-        })
     // If the request comes from a browser
-    // if (req.accepts('html')) {
-    //     res.render('404.ejs');
-    // }
+    if (req.accepts('html')) {
+        res.status(404).render('404');
+    }
     // If the request comes from mobile/postman
-    // else if (req.accepts('json')) {
-    //     res.json({ message: '404 page not found' });
-    // }
+    else if (req.accepts('json')) {
+        res.status(404).json({ message: '404 page not found' });
+    }
     // Default response if the request comes from other sources
-    // else {
-    //     res.type('txt').send('404 Not Found');
-    // }
+    else {
+        res.status(404).type('txt').send('404 Not Found');
+    }
 });
 
 
@@ -46,7 +62,7 @@ app.use((error, req, res, next) => {
         .status(error.statusCode || 500)
         .json({
             status: error.statusText || ERROR,
-            message: error.errorMessage || error.message,
+            message: error.errorMessage || error.message || undefined,
             code: error.statusCode || 500,
             data: null
         })
