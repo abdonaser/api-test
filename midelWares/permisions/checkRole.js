@@ -3,7 +3,6 @@ const { ERROR } = require("../../utils/json_status_text");
 
 const checkRole = (allowedRoles) => {
     return (req, res, next) => {
-        console.log("checkRole Scope-> ", req.user?.role)
         const userRole = req.user?.role;
         if (!userRole) {
             const error = appError.create("the USer Role is Not Defined", 404, ERROR)

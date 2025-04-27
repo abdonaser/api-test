@@ -8,8 +8,10 @@ const PORT = process.env.PORT || 3000
 const connectDB = require('./config/dbConnection');
 const { ERROR } = require('./utils/json_status_text');
 const path = require('path');
+const ejs = require('ejs');
 
 //#region //MiddleWares------------------------------------------------------
+require('module-alias/register');
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json())
 
@@ -71,21 +73,34 @@ app.use((error, req, res, next) => {
 
 
 
+let dbConnection;
+
+const startServer = async () => {
+    if (!dbConnection) {
+        dbConnection = await connectDB();
+    }
+
+    app.listen(3000, () => console.log('Server running on http://localhost:3000'));
+};
+
+startServer();
+
+
 
 //#region  Server Creation
-connectDB(); // Connect to the database
+// connectDB(); // Connect to the database
 
-// Don't start the server until the database connection is established
-mongoose.connection.once('open', () => {
-    app.listen(PORT, () =>
-        console.log(`Server running at http://localhost:${PORT}`)
-    );
-});
+// // Don't start the server until the database connection is established
+// mongoose.connection.once('open', () => {
+//     app.listen(PORT, () =>
+//         console.log(`Server running at http://localhost:${PORT}`)
+//     );
+// });
 
-// Log errors if the database connection fails
-mongoose.connection.on('error', (error) =>
-    console.log('Database connection error:', error)
-);
+// // Log errors if the database connection fails
+// mongoose.connection.on('error', (error) =>
+//     console.log('Database connection error:', error)
+// );
 
 // Optional: Uncomment this line to log when the database connection is established successfully
 // mongoose.connection.on('open', () =>

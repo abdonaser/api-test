@@ -1,8 +1,10 @@
 const jwt = require('jsonwebtoken')
-const { ERROR } = require('../utils/json_status_text')
+const { ERROR, FAIL } = require('../utils/json_status_text')
 const appError = require('../utils/appError')
+const tokenErrorMassages = require('@utils/tokenErrorMessage')
+const usersModel = require('../models/users.model')
 
-const verifyJWT = (req, res, next) => {
+const verifyJWT = async (req, res, next) => {
 
     const authHeader = req.headers.authorization || req.headers.Authorization
 
@@ -13,28 +15,36 @@ const verifyJWT = (req, res, next) => {
 
     const token = authHeader.split(" ")[1];
 
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    const decodedData = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+
         if (err) {
-            const errorMessage = err.name == "TokenExpiredError" ? 'Your session has expired. Please log in again.'
-                : 'The provided token is invalid or tampered with. Access forbidden.';
+            console.log("errrrrr , -> ", err)
+            const errorMessage = (err.name == "TokenExpiredError") ? tokenErrorMassages.expired : tokenErrorMassages.public;
             const error = appError.create(errorMessage, 403, ERROR)
             return next(error)
         }
-
-
-
         if (!decoded?.userInfo) {
             const error = appError.create("Token payload is malformed.", 403, ERROR);
             return next(error);
         }
-
-        req.user = {
-            id: decoded.userInfo.id,
-            role: decoded.userInfo.role, // Optional: Add roles or other payload details if available
-        };
-        // Proceed to the next middleware or route handler
-        next();
+        return decoded
     })
+
+    const user = await usersModel.findById(decodedData.userInfo.id);
+    if (!user) {
+        return next(appError.create('User no longer exists!', 401, FAIL));
+    }
+
+    if (user.changedPasswordAfter(decodedData.iat)) {
+        return next(appError.create('Password changed recently. Please log in again.', 401, FAIL));
+    }
+
+    req.user = {
+        id: decodedData.userInfo.id,
+        role: decodedData.userInfo.role,
+    };
+    // Proceed to the next middleware or route handler
+    return next();
 }
 
 
