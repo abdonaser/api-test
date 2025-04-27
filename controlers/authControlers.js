@@ -15,7 +15,6 @@ const register = asyncWrapper(
     async (req, res, next) => {
         // Make Valdation
         const result = validationResult(req)
-        console.log("result -> ", result)
         if (!result.isEmpty()) {
             const error = appError.create(errorMessage(result.errors), 404, FAIL)
             return next(error)
@@ -61,7 +60,6 @@ const register = asyncWrapper(
 const verifyAccount = asyncWrapper(
     async (req, res, next) => {
         const result = validationResult(req)
-        console.log("result -> ", result)
         if (!result.isEmpty()) {
             const error = appError.create(errorMessage(result.errors), 404, FAIL)
             return next(error)
@@ -120,7 +118,6 @@ const verifyAccount = asyncWrapper(
 const resendVerificationCode = asyncWrapper(
     async (req, res, next) => {
         const result = validationResult(req)
-        console.log("result -> ", result)
         if (!result.isEmpty()) {
             const error = appError.create(errorMessage(result.errors), 404, FAIL)
             return next(error)
